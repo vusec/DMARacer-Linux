@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: GPL-2.0
+
+config HAVE_ARCH_KDFSAN
+  bool
+
+config KDFSAN
+  bool "DataFlowSanitizer : generalised dynamic data flow analysis"
+  default n
+  depends on HAVE_ARCH_KDFSAN
+  select STACKDEPOT
+  select STACKDEPOT_ALWAYS_INIT
+
+if KDFSAN
+
+config KDFSAN_USERSPACE_POLICIES
+  bool "DataFlowSanitizer : trigger to enable userspace tainting policies"
+  default n
+
+config KDFSAN_DOUBLEFETCH_POLICIES
+  bool "DataFlowSanitizer : trigger to enable double-fetch tainting policies"
+  default n
+
+endif

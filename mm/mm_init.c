@@ -21,6 +21,7 @@
 #include <linux/buffer_head.h>
 #include <linux/kmemleak.h>
 #include <linux/kfence.h>
+#include <linux/kdfsan.h>
 #include <linux/page_ext.h>
 #include <linux/pti.h>
 #include <linux/pgtable.h>
@@ -2781,6 +2782,7 @@ void __init mm_core_init(void)
 	kfence_alloc_pool();
 	report_meminit();
 	kmsan_init_shadow();
+        kdfsan_init_shadow();
 	stack_depot_early_init();
 	mem_init();
 	mem_init_print_info();
@@ -2803,5 +2805,6 @@ void __init mm_core_init(void)
 	/* Should be run after espfix64 is set up. */
 	pti_init();
 	kmsan_init_runtime();
+	kdfsan_init_runtime();
 	mm_cache_init();
 }

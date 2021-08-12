@@ -78,6 +78,7 @@
 #include <linux/vmalloc.h>
 #include <linux/sched/sysctl.h>
 #include <linux/net_mm.h>
+#include <linux/kdfsan.h>
 
 #include <trace/events/kmem.h>
 
@@ -3104,6 +3105,7 @@ static vm_fault_t wp_page_copy(struct vm_fault *vmf)
 			return ret == -EHWPOISON ? VM_FAULT_HWPOISON : 0;
 		}
 		kmsan_copy_page_meta(&new_folio->page, vmf->page);
+		kdfsan_copy_page_shadow(&new_folio->page, vmf->page);
 	}
 
 	if (mem_cgroup_charge(new_folio, mm, GFP_KERNEL))

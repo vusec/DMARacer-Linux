@@ -14,6 +14,8 @@
 #undef __cleanup
 #define __cleanup(func) __maybe_unused __attribute__((__cleanup__(func)))
 
+#define __no_opt __attribute__((optnone))
+
 /* same as gcc, this was present in clang-2.6 so we can assume it works
  * with any version that can compile the kernel
  */
@@ -81,6 +83,18 @@
 #else
 #define __no_sanitize_memory
 #define __no_kmsan_checks
+#endif
+
+#if __has_feature(dataflow_sanitizer)
+/*
+ * The __no_kdfsan_taint attribute ensures that a function does not produce
+ * false positive reports by:
+ *  - clearing taint of function args, memory loads/stores, and return value;
+ *  - not emitting callbacks (which typically implement a taint sink).
+ */
+#define __no_kdfsan_taint __attribute__((no_sanitize("dataflow")))
+#else
+#define __no_kdfsan_taint
 #endif
 
 /*

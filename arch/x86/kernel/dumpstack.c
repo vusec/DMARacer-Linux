@@ -69,7 +69,9 @@ static void printk_stack_address(unsigned long address, int reliable,
 				 const char *log_lvl)
 {
 	touch_nmi_watchdog();
-	printk("%s %s%pBb\n", log_lvl, reliable ? "" : "? ", (void *)address);
+
+        if (reliable)
+            printk("%s %s%pB\n", log_lvl, reliable ? "" : "? ", (void *)address);
 }
 
 static int copy_code(struct pt_regs *regs, u8 *buf, unsigned long src,
@@ -182,7 +184,7 @@ static void show_regs_if_on_stack(struct stack_info *info, struct pt_regs *regs,
  * pointers may not have their KMSAN shadow set up properly, which may result
  * in false positive reports. Disable instrumentation to avoid those.
  */
-__no_kmsan_checks
+__no_kmsan_checks __no_kdfsan_taint
 static void show_trace_log_lvl(struct task_struct *task, struct pt_regs *regs,
 			unsigned long *stack, const char *log_lvl)
 {

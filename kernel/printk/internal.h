@@ -24,10 +24,10 @@ int devkmsg_sysctl_set_loglvl(struct ctl_table *table, int write,
  * the maximum size of a formatted record (i.e. with prefix added
  * per line and dropped messages or in extended message format)
  */
-#define PRINTK_MESSAGE_MAX	2048
+#define PRINTK_MESSAGE_MAX	131071
 
 /* the maximum size allowed to be reserved for a record */
-#define PRINTKRB_RECORD_MAX	1024
+#define PRINTKRB_RECORD_MAX	65535
 
 /* Flags for a single printk record. */
 enum printk_info_flags {

@@ -10,6 +10,7 @@
 #include <linux/mm_types.h>
 #include <linux/string.h>
 #include <linux/mmap_lock.h>
+#include <linux/kdfsan.h>
 #include <asm/asm.h>
 #include <asm/page.h>
 #include <asm/smap.h>
@@ -76,6 +77,7 @@ extern int __get_user_bad(void);
 #define do_get_user_call(fn,x,ptr)					\
 ({									\
 	int __ret_gu;							\
+	__typeof__(*(ptr)) __user *__p = (ptr);				\
 	register __inttype(*(ptr)) __val_gu asm("%"_ASM_DX);		\
 	__chk_user_ptr(ptr);						\
 	asm volatile("call __" #fn "_%P4"				\
@@ -84,6 +86,7 @@ extern int __get_user_bad(void);
 		     : "0" (ptr), "i" (sizeof(*(ptr))));		\
 	instrument_get_user(__val_gu);					\
 	(x) = (__force __typeof__(*(ptr))) __val_gu;			\
+	dfsan_mem_transfer((void *)&(x), (__p), sizeof(*(ptr)), 0, dfsan_get_label((long) (__p)), 0);	\
 	__builtin_expect(__ret_gu, 0);					\
 })
 
@@ -185,6 +188,7 @@ extern void __put_user_nocheck_8(void);
 		       [size] "i" (sizeof(*(ptr)))			\
 		     :"ebx");						\
 	instrument_put_user(__x, __ptr, sizeof(*(ptr)));		\
+	dfsan_mem_transfer((__ptr), (const void *)&(__x), sizeof(*(ptr)), dfsan_get_label((long) (__ptr)), 0, 0);	\
 	__builtin_expect(__ret_pu, 0);					\
 })
 
@@ -295,12 +299,16 @@ do {									\
 } while (0)
 
 #define __get_user_asm(x, addr, itype, ltype, label)			\
+do {									\
+	__typeof__(*(addr)) __user *__p = (addr);			\
 	asm_volatile_goto("\n"						\
 		     "1:	mov"itype" %[umem],%[output]\n"		\
 		     _ASM_EXTABLE_UA(1b, %l2)				\
 		     : [output] ltype(x)				\
 		     : [umem] "m" (__m(addr))				\
-		     : : label)
+		     : : label);					\
+	dfsan_mem_transfer((void *)&(x), (__p), sizeof(*(addr)), 0, dfsan_get_label((long) (__p)), 0);	\
+} while (0)
 
 #else // !CONFIG_CC_HAS_ASM_GOTO_OUTPUT
 
@@ -477,11 +485,16 @@ struct __large_struct { unsigned long buf[100]; };
  * aliasing issues.
  */
 #define __put_user_goto(x, addr, itype, ltype, label)			\
+do {									\
+	__typeof__(*(addr)) ___x = (x);					\
+	__typeof__(addr) ___ptr = (addr);				\
 	asm_volatile_goto("\n"						\
 		"1:	mov"itype" %0,%1\n"				\
 		_ASM_EXTABLE_UA(1b, %l2)				\
 		: : ltype(x), "m" (__m(addr))				\
-		: : label)
+		: : label);						\
+	dfsan_mem_transfer((___ptr), (const void *)&(___x), sizeof(*(addr)), dfsan_get_label((long) (___ptr)), 0, 0);	\
+} while (0)
 
 extern unsigned long
 copy_from_user_nmi(void *to, const void __user *from, unsigned long n);

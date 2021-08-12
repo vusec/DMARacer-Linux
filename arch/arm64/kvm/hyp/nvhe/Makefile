@@ -104,6 +104,7 @@ KBUILD_CFLAGS += -fno-asynchronous-unwind-tables -fno-unwind-tables
 GCOV_PROFILE	:= n
 KASAN_SANITIZE	:= n
 KCSAN_SANITIZE	:= n
+KDFSAN_SANITIZE	:= n
 UBSAN_SANITIZE	:= n
 KCOV_INSTRUMENT	:= n
 

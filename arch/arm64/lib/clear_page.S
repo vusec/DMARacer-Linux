@@ -36,5 +36,6 @@ SYM_FUNC_START(__pi_clear_page)
 	b.ne	2b
 	ret
 SYM_FUNC_END(__pi_clear_page)
-SYM_FUNC_ALIAS(clear_page, __pi_clear_page)
-EXPORT_SYMBOL(clear_page)
+SYM_FUNC_ALIAS(clear_page_orig, __pi_clear_page)
+EXPORT_SYMBOL(clear_page_orig)
+

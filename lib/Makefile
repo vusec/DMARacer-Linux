@@ -69,6 +69,11 @@ obj-$(CONFIG_TEST_IDA) += test_ida.o
 obj-$(CONFIG_TEST_UBSAN) += test_ubsan.o
 CFLAGS_test_ubsan.o += $(call cc-disable-warning, vla)
 UBSAN_SANITIZE_test_ubsan.o := y
+obj-$(CONFIG_KDFSAN) += test_kdfsan_base.o test_kdfsan_policies.o
+KASAN_SANITIZE_test_kdfsan_base.o := n
+KASAN_SANITIZE_test_kdfsan_policies.o := n
+CFLAGS_test_kdfsan_base.o = -O0  -Wframe-larger-than=4096 -Wno-everything
+CFLAGS_test_kdfsan_policies.o = -O2  -Wframe-larger-than=4096 
 obj-$(CONFIG_TEST_KSTRTOX) += test-kstrtox.o
 obj-$(CONFIG_TEST_LIST_SORT) += test_list_sort.o
 obj-$(CONFIG_TEST_MIN_HEAP) += test_min_heap.o
@@ -288,6 +293,10 @@ KASAN_SANITIZE_stackdepot.o := n
 # recursion.
 KMSAN_SANITIZE_stackdepot.o := n
 KCOV_INSTRUMENT_stackdepot.o := n
+KDFSAN_SANITIZE_stackdepot.o := n
+
+KCOV_INSTRUMENT_maple_tree.o := n
+KDFSAN_SANITIZE_maple_tree.o := n
 
 obj-$(CONFIG_REF_TRACKER) += ref_tracker.o
 

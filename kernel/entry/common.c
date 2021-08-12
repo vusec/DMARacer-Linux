@@ -6,6 +6,7 @@
 #include <linux/highmem.h>
 #include <linux/jump_label.h>
 #include <linux/kmsan.h>
+#include <linux/kdfsan.h>
 #include <linux/livepatch.h>
 #include <linux/audit.h>
 #include <linux/tick.h>
@@ -26,6 +27,7 @@ static __always_inline void __enter_from_user_mode(struct pt_regs *regs)
 
 	instrumentation_begin();
 	kmsan_unpoison_entry_regs(regs);
+	kdfsan_domain_enter();
 	trace_hardirqs_off_finish();
 	instrumentation_end();
 }
@@ -127,6 +129,7 @@ noinstr void syscall_enter_from_user_mode_prepare(struct pt_regs *regs)
 static __always_inline void __exit_to_user_mode(void)
 {
 	instrumentation_begin();
+	kdfsan_domain_exit();
 	trace_hardirqs_on_prepare();
 	lockdep_hardirqs_on_prepare();
 	instrumentation_end();

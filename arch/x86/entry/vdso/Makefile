@@ -10,7 +10,8 @@ include $(srctree)/lib/vdso/Makefile
 KASAN_SANITIZE			:= n
 KMSAN_SANITIZE_vclock_gettime.o := n
 KMSAN_SANITIZE_vgetcpu.o	:= n
-
+KDFSAN_SANITIZE_vclock_gettime.o := n
+KDFSAN_SANITIZE_vgetcpu.o	:= n
 UBSAN_SANITIZE			:= n
 KCSAN_SANITIZE			:= n
 OBJECT_FILES_NON_STANDARD	:= y

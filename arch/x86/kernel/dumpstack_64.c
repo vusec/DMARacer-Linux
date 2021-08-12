@@ -72,7 +72,7 @@ struct estack_pages {
 	[PFN_DOWN(CEA_ESTACK_OFFS(st)) ...				\
 	 PFN_DOWN(CEA_ESTACK_OFFS(st) + CEA_ESTACK_SIZE(st) - 1)] = {	\
 		.offs	= CEA_ESTACK_OFFS(st),				\
-		.size	= CEA_ESTACK_SIZE(st),				\
+		.size	= (u16)CEA_ESTACK_SIZE(st),				\
 		.type	= STACK_TYPE_EXCEPTION + ESTACK_ ##st, }
 
 /*

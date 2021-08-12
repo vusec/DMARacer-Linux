@@ -168,7 +168,7 @@ struct thread_info {
  * pointers may not have their KMSAN shadow set up properly, which may result
  * in false positive reports. Disable instrumentation to avoid those.
  */
-__no_kmsan_checks
+__no_kmsan_checks __no_kdfsan_taint
 static inline int arch_within_stack_frames(const void * const stack,
 					   const void * const stackend,
 					   const void *obj, unsigned long len)

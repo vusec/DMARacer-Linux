@@ -192,7 +192,7 @@ static struct pt_regs *decode_frame_pointer(unsigned long *bp)
  * we mark the functions scanning the stack (here and below) with
  * __no_kmsan_checks.
  */
-__no_kmsan_checks
+__no_kmsan_checks __no_kdfsan_taint
 static bool update_stack_state(struct unwind_state *state,
 			       unsigned long *next_bp)
 {
@@ -260,7 +260,7 @@ static bool update_stack_state(struct unwind_state *state,
 	return true;
 }
 
-__no_kmsan_checks
+__no_kmsan_checks __no_kdfsan_taint
 bool unwind_next_frame(struct unwind_state *state)
 {
 	struct pt_regs *regs;

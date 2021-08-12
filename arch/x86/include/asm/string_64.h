@@ -16,17 +16,15 @@
 
 #define __HAVE_ARCH_MEMCPY 1
 extern void *memcpy(void *to, const void *from, size_t len);
-extern void *__memcpy(void *to, const void *from, size_t len);
 
 #define __HAVE_ARCH_MEMSET
 void *memset(void *s, int c, size_t n);
-void *__memset(void *s, int c, size_t n);
 
 /*
  * KMSAN needs to instrument as much code as possible. Use C versions of
  * memsetXX() from lib/string.c under KMSAN.
  */
-#if !defined(CONFIG_KMSAN)
+#if !defined(CONFIG_KDFSAN) && !defined(CONFIG_KMSAN)
 #define __HAVE_ARCH_MEMSET16
 static inline void *memset16(uint16_t *s, uint16_t v, size_t n)
 {
@@ -66,6 +64,9 @@ static inline void *memset64(uint64_t *s, uint64_t v, size_t n)
 
 #define __HAVE_ARCH_MEMMOVE
 void *memmove(void *dest, const void *src, size_t count);
+
+extern void *__memcpy(void *to, const void *from, size_t len);
+void *__memset(void *s, int c, size_t n);
 void *__memmove(void *dest, const void *src, size_t count);
 
 int memcmp(const void *cs, const void *ct, size_t count);

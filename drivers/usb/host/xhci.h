@@ -1269,7 +1269,8 @@ enum xhci_setup_dev {
 
 /* bits 16:23 are the virtual function ID */
 /* bits 24:31 are the slot ID */
-#define TRB_TO_SLOT_ID(p)	(((p) & (0xff<<24)) >> 24)
+//#define TRB_TO_SLOT_ID(p)	(((p) & (0xff<<24)) >> 24)
+__no_opt static inline u32 TRB_TO_SLOT_ID(u32 p) { return (((p) & (0xff<<24)) >> 24); }
 #define SLOT_ID_FOR_TRB(p)	(((p) & 0xff) << 24)
 
 /* Stop Endpoint TRB - ep_index to endpoint ID for this TRB */

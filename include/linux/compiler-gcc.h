@@ -45,6 +45,8 @@
 #define __latent_entropy __attribute__((latent_entropy))
 #endif
 
+#define __no_opt __attribute__((optimize(0)))
+
 /*
  * calling noreturn functions, __builtin_unreachable() and __builtin_trap()
  * confuse the stack allocation in gcc, leading to overly large stack
@@ -110,10 +112,11 @@
 #endif
 
 /*
- * GCC does not support KMSAN.
+ * GCC does not support KMSAN or KDFSAN.
  */
 #define __no_sanitize_memory
 #define __no_kmsan_checks
+#define __no_kdfsan_checks
 
 /*
  * Turn individual warnings and errors on and off locally, depending

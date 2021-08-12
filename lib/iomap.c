@@ -10,6 +10,111 @@
 
 #include <linux/export.h>
 
+#ifdef CONFIG_KDFSAN
+
+#undef build_mmio_read
+#undef build_mmio_write
+
+#define build_mmio_read(name, size, type, reg, barrier) \
+noinline type name(const volatile void __iomem *addr) \
+{ type ret; asm volatile("mov" size " %1,%0":reg (ret) \
+:"m" (*(volatile type __force *)addr) barrier); \
+dfsan_mem_transfer_with_rip(&ret, (void*)addr, sizeof(type), 0, dfsan_get_label((long)addr), 0,  __builtin_return_address(0)); \
+return ret; } \
+\
+noinline type name##_ret(const volatile void __iomem *addr) \
+{ type ret; asm volatile("mov" size " %1,%0":reg (ret) \
+:"m" (*(volatile type __force *)addr) barrier); \
+dfsan_mem_transfer_with_rip(&ret, (void*)addr, sizeof(type), 0, dfsan_get_label((long)addr), 0,  __builtin_return_address(1)); \
+return ret; }
+
+#define build_mmio_write(name, size, type, reg, barrier) \
+noinline void name(type val, volatile void __iomem *addr) \
+{ asm volatile("mov" size " %0,%1": :reg (val), \
+"m" (*(volatile type __force *)addr) barrier); \
+dfsan_mem_transfer_with_rip((void*)addr, &val, sizeof(type), dfsan_get_label((long)addr), 0, 0,  __builtin_return_address(0)); } \
+\
+noinline void name##_ret(type val, volatile void __iomem *addr) \
+{ asm volatile("mov" size " %0,%1": :reg (val), \
+"m" (*(volatile type __force *)addr) barrier); \
+dfsan_mem_transfer_with_rip((void*)addr, &val, sizeof(type), dfsan_get_label((long)addr), 0, 0,  __builtin_return_address(1)); }
+
+build_mmio_read(readb, "b", unsigned char, "=q", :"memory")
+build_mmio_read(readw, "w", unsigned short, "=r", :"memory")
+build_mmio_read(readl, "l", unsigned int, "=r", :"memory")
+
+build_mmio_read(__readb, "b", unsigned char, "=q", )
+build_mmio_read(__readw, "w", unsigned short, "=r", )
+build_mmio_read(__readl, "l", unsigned int, "=r", )
+
+build_mmio_write(writeb, "b", unsigned char, "q", :"memory")
+build_mmio_write(writew, "w", unsigned short, "r", :"memory")
+build_mmio_write(writel, "l", unsigned int, "r", :"memory")
+
+build_mmio_write(__writeb, "b", unsigned char, "q", )
+build_mmio_write(__writew, "w", unsigned short, "r", )
+build_mmio_write(__writel, "l", unsigned int, "r", )
+
+build_mmio_read(readq, "q", u64, "=r", :"memory")
+build_mmio_read(__readq, "q", u64, "=r", )
+build_mmio_write(writeq, "q", u64, "r", :"memory")
+build_mmio_write(__writeq, "q", u64, "r", )
+
+#undef readb
+#undef readw
+#undef readl
+#undef readb_relaxed
+#undef readw_relaxed
+#undef readl_relaxed
+#undef __raw_readb
+#undef __raw_readw
+#undef __raw_readl
+#define readb readb_ret
+#define readw readw_ret
+#define readl readl_ret
+#define readb_relaxed(a) __readb_ret(a)
+#define readw_relaxed(a) __readw_ret(a)
+#define readl_relaxed(a) __readl_ret(a)
+#define __raw_readb __readb_ret
+#define __raw_readw __readw_ret
+#define __raw_readl __readl_ret
+
+#undef writeb
+#undef writew
+#undef writel
+#undef writeb_relaxed
+#undef writew_relaxed
+#undef writel_relaxed
+#undef __raw_writeb
+#undef __raw_writew
+#undef __raw_writel
+#define writeb writeb_ret
+#define writew writew_ret
+#define writel writel_ret
+#define writeb_relaxed(v, a) __writeb_ret(v, a)
+#define writew_relaxed(v, a) __writew_ret(v, a)
+#define writel_relaxed(v, a) __writel_ret(v, a)
+#define __raw_writeb __writeb_ret
+#define __raw_writew __writew_ret
+#define __raw_writel __writel_ret
+
+#undef readq_relaxed
+#undef writeq_relaxed
+#undef __raw_readq
+#undef __raw_writeq
+#undef readq
+#undef writeq
+#define readq_relaxed(a)	__readq_ret(a)
+#define writeq_relaxed(v, a)	__writeq_ret(v, a)
+#define __raw_readq		__readq_ret
+#define __raw_writeq		__writeq_ret
+#define readq			readq_ret
+#define writeq			writeq_ret
+
+// TODO: Add '_ret' for PMIO in/out?
+
+#endif
+
 /*
  * Read/write from/to an (offsettable) iomem cookie. It might be a PIO
  * access or a MMIO access, these functions don't care. The info is

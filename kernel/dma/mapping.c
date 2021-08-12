@@ -14,6 +14,7 @@
 #include <linux/of_device.h>
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
+#include <linux/kdfsan.h>
 #include "debug.h"
 #include "direct.h"
 
@@ -163,6 +164,7 @@ dma_addr_t dma_map_page_attrs(struct device *dev, struct page *page,
 		addr = ops->map_page(dev, page, offset, size, dir, attrs);
 	kmsan_handle_dma(page, offset, size, dir);
 	debug_dma_map_page(dev, page, offset, size, dir, addr, attrs);
+	kdfsan_dma_alloc(dev, addr, page_to_virt(page)+offset, size, true);
 
 	return addr;
 }
@@ -171,6 +173,7 @@ EXPORT_SYMBOL(dma_map_page_attrs);
 void dma_unmap_page_attrs(struct device *dev, dma_addr_t addr, size_t size,
 		enum dma_data_direction dir, unsigned long attrs)
 {
+	kdfsan_dma_free(dev, addr);
 	const struct dma_map_ops *ops = get_dma_ops(dev);
 
 	BUG_ON(!valid_dma_direction(dir));
@@ -203,6 +206,7 @@ static int __dma_map_sg_attrs(struct device *dev, struct scatterlist *sg,
 	if (ents > 0) {
 		kmsan_handle_dma_sg(sg, nents, dir);
 		debug_dma_map_sg(dev, sg, nents, ents, dir, attrs);
+		kdfsan_dma_alloc_sg(dev, sg, ents);
 	} else if (WARN_ON_ONCE(ents != -EINVAL && ents != -ENOMEM &&
 				ents != -EIO && ents != -EREMOTEIO)) {
 		return -EIO;
@@ -284,6 +288,7 @@ void dma_unmap_sg_attrs(struct device *dev, struct scatterlist *sg,
 				      int nents, enum dma_data_direction dir,
 				      unsigned long attrs)
 {
+	kdfsan_dma_free_sg(dev, sg, nents);
 	const struct dma_map_ops *ops = get_dma_ops(dev);
 
 	BUG_ON(!valid_dma_direction(dir));
@@ -340,6 +345,7 @@ void dma_sync_single_for_cpu(struct device *dev, dma_addr_t addr, size_t size,
 	else if (ops->sync_single_for_cpu)
 		ops->sync_single_for_cpu(dev, addr, size, dir);
 	debug_dma_sync_single_for_cpu(dev, addr, size, dir);
+	kdfsan_dma_sync(dev, addr, size, true);
 }
 EXPORT_SYMBOL(dma_sync_single_for_cpu);
 
@@ -354,6 +360,7 @@ void dma_sync_single_for_device(struct device *dev, dma_addr_t addr,
 	else if (ops->sync_single_for_device)
 		ops->sync_single_for_device(dev, addr, size, dir);
 	debug_dma_sync_single_for_device(dev, addr, size, dir);
+	kdfsan_dma_sync(dev, addr, size, false);
 }
 EXPORT_SYMBOL(dma_sync_single_for_device);
 
@@ -368,6 +375,7 @@ void dma_sync_sg_for_cpu(struct device *dev, struct scatterlist *sg,
 	else if (ops->sync_sg_for_cpu)
 		ops->sync_sg_for_cpu(dev, sg, nelems, dir);
 	debug_dma_sync_sg_for_cpu(dev, sg, nelems, dir);
+	kdfsan_dma_sync_sg(dev, sg, nelems, true);
 }
 EXPORT_SYMBOL(dma_sync_sg_for_cpu);
 
@@ -382,6 +390,7 @@ void dma_sync_sg_for_device(struct device *dev, struct scatterlist *sg,
 	else if (ops->sync_sg_for_device)
 		ops->sync_sg_for_device(dev, sg, nelems, dir);
 	debug_dma_sync_sg_for_device(dev, sg, nelems, dir);
+	kdfsan_dma_sync_sg(dev, sg, nelems, false);
 }
 EXPORT_SYMBOL(dma_sync_sg_for_device);
 
@@ -524,6 +533,7 @@ void *dma_alloc_attrs(struct device *dev, size_t size, dma_addr_t *dma_handle,
 		return NULL;
 
 	debug_dma_alloc_coherent(dev, size, *dma_handle, cpu_addr, attrs);
+	kdfsan_dma_alloc(dev, *dma_handle, cpu_addr, size, false);
 	return cpu_addr;
 }
 EXPORT_SYMBOL(dma_alloc_attrs);
@@ -531,6 +541,7 @@ EXPORT_SYMBOL(dma_alloc_attrs);
 void dma_free_attrs(struct device *dev, size_t size, void *cpu_addr,
 		dma_addr_t dma_handle, unsigned long attrs)
 {
+	kdfsan_dma_free(dev, dma_handle);
 	const struct dma_map_ops *ops = get_dma_ops(dev);
 
 	if (dma_release_from_dev_coherent(dev, get_order(size), cpu_addr))

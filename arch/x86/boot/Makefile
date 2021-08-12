@@ -13,6 +13,8 @@
 KASAN_SANITIZE			:= n
 KCSAN_SANITIZE			:= n
 KMSAN_SANITIZE			:= n
+KDFSAN_SANITIZE			:= n
+KDFSAN_NO_RUNTIME_main.o	:= y
 OBJECT_FILES_NON_STANDARD	:= y
 
 # Kernel does not boot with kcov instrumentation here.

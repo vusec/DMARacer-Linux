@@ -83,8 +83,8 @@ KVM_NVHE_ALIAS(kvm_arm_pmu_available);
 #endif
 
 /* Position-independent library routines */
-KVM_NVHE_ALIAS_HYP(clear_page, __pi_clear_page);
-KVM_NVHE_ALIAS_HYP(copy_page, __pi_copy_page);
+KVM_NVHE_ALIAS_HYP(clear_page_orig, __pi_clear_page_orig);
+KVM_NVHE_ALIAS_HYP(copy_page_orig, __pi_copy_page_orig);
 KVM_NVHE_ALIAS_HYP(memcpy, __pi_memcpy);
 KVM_NVHE_ALIAS_HYP(memset, __pi_memset);
 

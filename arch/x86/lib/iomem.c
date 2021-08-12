@@ -25,6 +25,10 @@ static __always_inline void rep_movs(void *to, const void *from, size_t n)
 
 static void string_memcpy_fromio(void *to, const volatile void __iomem *from, size_t n)
 {
+	const void *orig_to = to;
+	const volatile void __iomem *orig_from = from;
+	const size_t orig_n = n;
+
 	if (unlikely(!n))
 		return;
 
@@ -40,10 +44,15 @@ static void string_memcpy_fromio(void *to, const volatile void __iomem *from, si
 	rep_movs(to, (const void *)from, n);
 	/* KMSAN must treat values read from devices as initialized. */
 	kmsan_unpoison_memory(to, n);
+	dfsan_mem_transfer_with_rip((void*)orig_to, (const void *)orig_from, orig_n, dfsan_get_label((long)orig_to), dfsan_get_label((long)orig_from), dfsan_get_label(orig_n), __builtin_return_address(0));
 }
 
 static void string_memcpy_toio(volatile void __iomem *to, const void *from, size_t n)
 {
+	const volatile void __iomem *orig_to = to;
+	const void *orig_from = from;
+	const size_t orig_n = n;
+
 	if (unlikely(!n))
 		return;
 
@@ -59,6 +68,7 @@ static void string_memcpy_toio(volatile void __iomem *to, const void *from, size
 		n-=2;
 	}
 	rep_movs((void *)to, (const void *) from, n);
+	dfsan_mem_transfer_with_rip((void*)orig_to, (const void *)orig_from, orig_n, dfsan_get_label((long)orig_to), dfsan_get_label((long)orig_from), dfsan_get_label(orig_n), __builtin_return_address(0));
 }
 
 static void unrolled_memcpy_fromio(void *to, const volatile void __iomem *from, size_t n)

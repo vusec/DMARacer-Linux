@@ -5,6 +5,7 @@
 #include <linux/compiler.h>
 #include <linux/instrumentation.h>
 #include <linux/once_lite.h>
+#include <linux/kdfsan.h>
 
 #define CUT_HERE		"------------[ cut here ]------------\n"
 
@@ -68,7 +69,7 @@ struct bug_entry {
 #endif
 
 #ifndef HAVE_ARCH_BUG_ON
-#define BUG_ON(condition) do { if (unlikely(condition)) BUG(); } while (0)
+#define BUG_ON(condition) do { long cond = (long)(condition); kdfsan_bugon(dfsan_get_label(cond)); if (unlikely(cond)) BUG(); } while (0)
 #endif
 
 /*

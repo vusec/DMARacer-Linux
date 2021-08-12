@@ -224,6 +224,9 @@ struct page {
 	struct page *kmsan_shadow;
 	struct page *kmsan_origin;
 #endif
+#ifdef CONFIG_KDFSAN
+        struct page *shadow;
+#endif
 
 #ifdef LAST_CPUPID_NOT_IN_PAGE_FLAGS
 	int _last_cpupid;

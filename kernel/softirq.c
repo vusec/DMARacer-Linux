@@ -595,6 +595,7 @@ void irq_enter_rcu(void)
 		tick_irq_enter();
 
 	account_hardirq_enter(current);
+	kdfsan_domain_enter();
 }
 
 /**
@@ -621,6 +622,7 @@ static inline void tick_irq_exit(void)
 
 static inline void __irq_exit_rcu(void)
 {
+	kdfsan_domain_exit();
 #ifndef __ARCH_IRQ_EXIT_IRQS_DISABLED
 	local_irq_disable();
 #else

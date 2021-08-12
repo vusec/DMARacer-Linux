@@ -172,6 +172,20 @@ _c_flags += $(if $(patsubst n%,, \
 		$(KMSAN_ENABLE_CHECKS_$(basetarget).o)$(KMSAN_ENABLE_CHECKS)y), \
 		, -mllvm -msan-disable-checks=1)
 endif
+ifeq ($(CONFIG_KDFSAN),y)
+# KDFSAN_SANITIZE is y by default
+_c_flags += $(if $(patsubst n%,, \
+		$(KDFSAN_SANITIZE_$(basetarget).o)$(KDFSAN_SANITIZE)y), \
+		$(CFLAGS_KDFSAN))
+# KDFSAN_NO_RUNTIME is n by default
+_c_flags += $(if $(patsubst y%,, \
+		$(KDFSAN_NO_RUNTIME_$(basetarget).o)$(KDFSAN_NO_RUNTIME)n), \
+		,-DKDFSAN_NO_RUNTIME)
+# KDFSAN_CLEARTAINT is n by default
+_c_flags += $(if $(patsubst y%,, \
+		$(KDFSAN_CLEARTAINT_$(basetarget).o)$(KDFSAN_CLEARTAINT)n), \
+		,-DKDFSAN_CLEARTAINT -mllvm -dfsan-clear-taint)
+endif
 
 ifeq ($(CONFIG_UBSAN),y)
 _c_flags += $(if $(patsubst n%,, \

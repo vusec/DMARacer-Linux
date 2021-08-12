@@ -21,6 +21,8 @@
 KASAN_SANITIZE			:= n
 KCSAN_SANITIZE			:= n
 KMSAN_SANITIZE			:= n
+KDFSAN_SANITIZE			:= n
+KDFSAN_NO_RUNTIME_misc.o	:= y
 OBJECT_FILES_NON_STANDARD	:= y
 
 # Prevents link failures: __sanitizer_cov_trace_pc() is not linked in.

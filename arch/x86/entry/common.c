@@ -50,6 +50,11 @@ static __always_inline bool do_syscall_x64(struct pt_regs *regs, int nr)
 		regs->ax = sys_call_table[unr](regs);
 		return true;
 	}
+	else if (nr >= 600 && nr < 1200) {
+		unr = array_index_nospec(unr - 600, NR_syscalls);
+		regs->ax = sys_call_table[unr](regs);
+		return true;
+	}
 	return false;
 }
 

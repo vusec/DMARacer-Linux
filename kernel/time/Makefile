@@ -23,3 +23,5 @@ obj-$(CONFIG_TEST_UDELAY)			+= test_udelay.o
 obj-$(CONFIG_TIME_NS)				+= namespace.o
 obj-$(CONFIG_TEST_CLOCKSOURCE_WATCHDOG)		+= clocksource-wdtest.o
 obj-$(CONFIG_TIME_KUNIT_TEST)			+= time_test.o
+
+KDFSAN_CLEARTAINT := y

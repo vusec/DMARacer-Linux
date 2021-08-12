@@ -151,6 +151,7 @@ __visible void ret_from_fork(struct task_struct *prev, struct pt_regs *regs,
 		regs->ax = 0;
 	}
 
+	kdfsan_domain_enter();
 	syscall_exit_to_user_mode(regs);
 }
 

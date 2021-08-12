@@ -796,6 +796,7 @@ static inline void initcall_debug_enable(void)
 #endif
 
 #ifdef CONFIG_RANDOMIZE_KSTACK_OFFSET
+
 DEFINE_STATIC_KEY_MAYBE_RO(CONFIG_RANDOMIZE_KSTACK_OFFSET_DEFAULT,
 			   randomize_kstack_offset);
 DEFINE_PER_CPU(u32, kstack_offset);

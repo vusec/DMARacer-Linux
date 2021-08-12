@@ -157,6 +157,7 @@ u8 acpi_ut_generate_checksum(void *table, u32 length, u8 original_checksum)
  *
  ******************************************************************************/
 
+__no_kdfsan_taint
 u8 acpi_ut_checksum(u8 *buffer, u32 length)
 {
 	u8 sum = 0;

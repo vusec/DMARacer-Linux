@@ -41,20 +41,34 @@
 #include <linux/string.h>
 #include <linux/compiler.h>
 #include <linux/cc_platform.h>
+#include <linux/kdfsan.h>
 #include <asm/page.h>
 #include <asm/early_ioremap.h>
 #include <asm/pgtable_types.h>
 #include <asm/shared/io.h>
 
+#ifdef CONFIG_KDFSAN
+
 #define build_mmio_read(name, size, type, reg, barrier) \
-static inline type name(const volatile void __iomem *addr) \
-{ type ret; asm volatile("mov" size " %1,%0":reg (ret) \
-:"m" (*(volatile type __force *)addr) barrier); return ret; }
+type name(const volatile void __iomem *addr);
 
 #define build_mmio_write(name, size, type, reg, barrier) \
-static inline void name(type val, volatile void __iomem *addr) \
+void name(type val, volatile void __iomem *addr);
+
+#else
+
+#define build_mmio_read(name, size, type, reg, barrier) \
+static __always_inline type name(const volatile void __iomem *addr) \
+{ type ret; asm volatile("mov" size " %1,%0":reg (ret) \
+:"m" (*(volatile type __force *)addr) barrier); \
+return ret; }
+
+#define build_mmio_write(name, size, type, reg, barrier) \
+static __always_inline void name(type val, volatile void __iomem *addr) \
 { asm volatile("mov" size " %0,%1": :reg (val), \
 "m" (*(volatile type __force *)addr) barrier); }
+
+#endif
 
 build_mmio_read(readb, "b", unsigned char, "=q", :"memory")
 build_mmio_read(readw, "w", unsigned short, "=r", :"memory")
@@ -248,20 +262,20 @@ static inline void slow_down_io(void)
 #endif
 
 #define BUILDIO(bwl, bw, type)						\
-static inline void out##bwl##_p(type value, u16 port)			\
+static __always_inline void out##bwl##_p(type value, u16 port)		\
 {									\
 	out##bwl(value, port);						\
 	slow_down_io();							\
 }									\
 									\
-static inline type in##bwl##_p(u16 port)				\
+static __always_inline type in##bwl##_p(u16 port)			\
 {									\
 	type value = in##bwl(port);					\
 	slow_down_io();							\
 	return value;							\
 }									\
 									\
-static inline void outs##bwl(u16 port, const void *addr, unsigned long count) \
+static __always_inline void outs##bwl(u16 port, const void *addr, unsigned long count) \
 {									\
 	if (cc_platform_has(CC_ATTR_GUEST_UNROLL_STRING_IO)) {		\
 		type *value = (type *)addr;				\
@@ -271,13 +285,16 @@ static inline void outs##bwl(u16 port, const void *addr, unsigned long count) \
 			count--;					\
 		}							\
 	} else {							\
+		const void *orig_addr = addr;				\
+		const unsigned long orig_count = count;			\
 		asm volatile("rep; outs" #bwl				\
 			     : "+S"(addr), "+c"(count)			\
 			     : "d"(port) : "memory");			\
+		kdfsan_pmio_out((void*)orig_addr, port, orig_count, dfsan_get_label((long)orig_addr), dfsan_get_label(port), dfsan_get_label(orig_count)); \
 	}								\
 }									\
 									\
-static inline void ins##bwl(u16 port, void *addr, unsigned long count)	\
+static __always_inline void ins##bwl(u16 port, void *addr, unsigned long count)	\
 {									\
 	if (cc_platform_has(CC_ATTR_GUEST_UNROLL_STRING_IO)) {		\
 		type *value = (type *)addr;				\
@@ -287,9 +304,12 @@ static inline void ins##bwl(u16 port, void *addr, unsigned long count)	\
 			count--;					\
 		}							\
 	} else {							\
+		const void *orig_addr = addr;				\
+		const unsigned long orig_count = count;			\
 		asm volatile("rep; ins" #bwl				\
 			     : "+D"(addr), "+c"(count)			\
 			     : "d"(port) : "memory");			\
+		kdfsan_pmio_in(port, orig_count, (void*)orig_addr, dfsan_get_label(port), dfsan_get_label(orig_count), dfsan_get_label((long)orig_addr));	\
 	}								\
 }
 

@@ -1,0 +1,71 @@
+# SPDX-License-Identifier: GPL-2.0
+
+ifeq ($(ARCH),x86)
+kdf_arch_abilist := -mllvm -dfsan-abilist=mm/kdfsan/kdfsan_abilist_x86.txt
+else ifeq ($(ARCH),arm64)
+kdf_arch_abilist := -mllvm -dfsan-abilist=mm/kdfsan/kdfsan_abilist_arm64.txt
+endif
+
+common_kdfsan_args := -fsanitize=dataflow \
+	-mllvm -dfsan-abilist=mm/kdfsan/kdfsan_abilist_base.txt \
+	-mllvm -dfsan-kernel \
+	-mllvm -dfsan-keep-uninst-defs \
+	-mllvm -dfsan-task-centric-local-storage \
+	$(kdf_arch_abilist)
+
+# Ablation study support. The values are set and matched by the taskfiles.
+ifeq ($(KDFSAN_ABLATION),0_baseline)
+
+# This is just here to see clearly that this is the correct baseline config in the log.
+export CFLAGS_KDFSAN := -DBASELINE_KERNEL_FOR_KDFSAN
+
+else ifeq ($(KDFSAN_ABLATION),1_with_kdfsan)
+
+export CFLAGS_KDFSAN := $(common_kdfsan_args)
+
+else ifeq ($(KDFSAN_ABLATION),2_with_dma_region_tracking)
+
+export CFLAGS_KDFSAN := $(common_kdfsan_args)
+
+else ifeq ($(KDFSAN_ABLATION),3_with_memory_access_monitor_load)
+
+export CFLAGS_KDFSAN := $(common_kdfsan_args) \
+	-mllvm -dfsan-conditional-callbacks \
+	-mllvm -dfsan-event-callbacks-load \
+	-mllvm -dfsan-event-callbacks-mem-transfer
+
+else ifeq ($(KDFSAN_ABLATION),4_with_memory_access_monitor_store)
+
+export CFLAGS_KDFSAN := $(common_kdfsan_args) \
+	-mllvm -dfsan-conditional-callbacks \
+	-mllvm -dfsan-event-callbacks-load \
+	-mllvm -dfsan-event-callbacks-mem-transfer \
+	-mllvm -dfsan-event-callbacks-store
+
+else ifeq ($(KDFSAN_ABLATION),5_with_memory_access_monitor_cmp)
+
+export CFLAGS_KDFSAN := $(common_kdfsan_args) \
+	-mllvm -dfsan-conditional-callbacks \
+	-mllvm -dfsan-event-callbacks-load \
+	-mllvm -dfsan-event-callbacks-store \
+	-mllvm -dfsan-event-callbacks-mem-transfer \
+	-mllvm -dfsan-event-callbacks-cmp
+
+else ifeq ($(KDFSAN_ABLATION),6_with_taint_aka_dmaracer)
+
+# This is the intended default. Set by the Taskfile.yml.
+export CFLAGS_KDFSAN := $(common_kdfsan_args) \
+	-mllvm -dfsan-conditional-callbacks \
+	-mllvm -dfsan-event-callbacks-load \
+	-mllvm -dfsan-event-callbacks-store \
+	-mllvm -dfsan-event-callbacks-mem-transfer \
+	-mllvm -dfsan-event-callbacks-cmp
+
+else ifeq ($(KDFSAN_ABLATION),7_kmsan)
+
+#export CFLAGS_KDFSAN := -DKMSAN_INDICATOR
+$(error kmsan ablation should not enable KDFSan)
+
+else
+$(error Unknown KDFSAN_ABLATION value)
+endif
